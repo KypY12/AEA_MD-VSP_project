@@ -9,7 +9,7 @@ def generate_random_bit_string(shape):
 
 
 if __name__ == '__main__':
-    file_path = "./data/m4n500s0.inp"
+    file_path = "data/4m500n/m4n500s0.inp"
     evaluation = Evaluation(file_path)
     cost_matrix_flat = evaluation.cost_matrix_flat
 

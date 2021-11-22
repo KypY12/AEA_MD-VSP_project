@@ -55,29 +55,27 @@ class GeneticAlgorithm:
         return min_index
 
     def execute(self):
+        print(self.m + self.n)
 
         for iteration in range(self.max_iterations):
             print(f"Iteration {iteration}")
             start = time.time()
 
             # Mutation
-            print("Mutation")
             self.mutation.execute(self.population)
 
             # Crossover
-            print("Crossover")
             self.crossover.execute(self.population)
 
             # Evaluation
-            print("Evaluation")
             self.evals = self.evaluation.execute(self.population)
 
             # Fitness
-            print("Fitness")
             self.fitness_values = self.fitness_execute()
 
+            print("Min eval : ", min(self.evals))
+
             # Selection
-            print("Selection")
             self.population = self.selection.execute(self.population, self.fitness_values)
 
             end = time.time()

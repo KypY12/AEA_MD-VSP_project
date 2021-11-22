@@ -42,7 +42,7 @@ class Crossover:
         for index in range(0, cross_count, 2):
             # get indecies of the two chromosomes in the population
             first, second = indecies[index], indecies[index + 1]
-            # choose 2 cutting points at random (avoiding doing the same as mutation)
+            # choose 4m1000n cutting points at random (avoiding doing the same as mutation)
 
             cut1, cut2 = 1, 1
             # avoid doing nothing (equal cuts) or mutation (1 difference between cuts)

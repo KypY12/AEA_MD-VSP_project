@@ -1,5 +1,7 @@
 import time
 
+import cplex
+
 import gurobipy as gp
 from gurobipy import GRB
 import numpy as np
@@ -66,17 +68,18 @@ def solve(m, n, depots_capacities, cost_matrix, unfeasible_matrix, unfeasible_pa
     # Set the objective function ( sum(sum(c_ij * x_ij)) )
     model.setObjective(cost_matrix.flatten() @ x, GRB.MINIMIZE)
 
+
     # All unfeasible arcs should be zero
     # (this is necessary because the cost matrix contains -1's for the unfeasible arcs
     # which would not constrain the use of unfeasible solutions in gurobi)
     model.addConstr(unfeasible_matrix @ x == 0.0, name="unfeasible")
 
-    # Trips single-entering constraints ( constraint (2) for trips )
+    # Trips single-entering constraints ( constraint (4m1000n) for trips )
     for j in range(m, m + n):
         model.addConstr(sum(x[(m + n) * i + j] for i in range(0, m + n)) == 1.0,
                         name="trip_in_" + str(j))
 
-    # Trips single-leaving constraints ( constraint (3) for trips )
+    # Trips single-leaving constraints ( constraint (4m1500n) for trips )
     for i in range(m, m + n):
         model.addConstr(sum(x[(m + n) * i + j] for j in range(0, m + n)) == 1.0,
                         name="trip_out_" + str(i))
@@ -161,44 +164,49 @@ def read_obj_file_paths(file_path):
 
 
 if __name__ == '__main__':
-    file_path = "./data/m4n500s0.inp"
+    file_path = "data/4m500n/m4n500s0.inp"
     m, n, depots_capacities, cost_matrix = read_cost_matrix(file_path)
     unfeasible_matrix = get_unfeasible_matrix(cost_matrix)
 
     print(cost_matrix)
     print(m, " ", n, " ", depots_capacities)
 
-    # unfeasible_paths = []
-    # iteration_count = 0
-    unfeasible_paths, iteration_count = read_obj_file_paths("objective_0.out")
+    unfeasible_paths = []
+    iteration_count = 0
+    # unfeasible_paths, iteration_count = read_obj_file_paths("objective_0.out")
 
     try:
 
-        unfeasible_paths_count = len(unfeasible_paths) - 1
+        model, x = solve(m, n, depots_capacities, cost_matrix, unfeasible_matrix, unfeasible_paths)
+        # unfeasible_paths += get_unfeasible_paths(m, n, x.X)
 
-        while unfeasible_paths_count < len(unfeasible_paths):
-            start = time.time()
+        print(model.cbGetSolution())
 
-            unfeasible_paths_count = len(unfeasible_paths)
-
-            model, x = solve(m, n, depots_capacities, cost_matrix, unfeasible_matrix, unfeasible_paths)
-            unfeasible_paths += get_unfeasible_paths(m, n, x.X)
-
-            end = time.time()
-            print(" ELAPES TIME : ", (end - start))
-
-            print("Current Obj (iteration ", iteration_count, ") : ", model.objVal)
-
-            np.save("results.npy", x.X)
-            with open("objective_1.out", "w") as file:
-                file.write(str(model.objVal) + "\n")
-                file.write("Iteration: " + str(iteration_count) + "\n")
-                file.write(str(unfeasible_paths))
-
-            iteration_count += 1
-
-        print("Final solution:\n", x.X)
-        print("Final Obj (iteration ", iteration_count, ") : ", model.objVal)
+        # unfeasible_paths_count = len(unfeasible_paths) - 1
+        #
+        # while unfeasible_paths_count < len(unfeasible_paths):
+        #     start = time.time()
+        #
+        #     unfeasible_paths_count = len(unfeasible_paths)
+        #
+        #     model, x = solve(m, n, depots_capacities, cost_matrix, unfeasible_matrix, unfeasible_paths)
+        #     unfeasible_paths += get_unfeasible_paths(m, n, x.X)
+        #
+        #     end = time.time()
+        #     print(" ELAPES TIME : ", (end - start))
+        #
+        #     print("Current Obj (iteration ", iteration_count, ") : ", model.objVal)
+        #
+        #     # np.save("results.npy", x.X)
+        #     # with open("objective_1.out", "w") as file:
+        #     #     file.write(str(model.objVal) + "\n")
+        #     #     file.write("Iteration: " + str(iteration_count) + "\n")
+        #     #     file.write(str(unfeasible_paths))
+        #
+        #     iteration_count += 1
+        #
+        # print("Final solution:\n", x.X)
+        # print("Final Obj (iteration ", iteration_count, ") : ", model.objVal)
 
     except gp.GurobiError as e:
         print('Error code ' + str(e.errno) + ": " + str(e))
