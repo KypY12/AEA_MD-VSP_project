@@ -11,7 +11,6 @@ class Ant:
         self.cost_matrix = cost_matrix
         self.inverse_div_cost_matrix = 1 / (self.cost_matrix + 1e-10)  # avoid zero cost division
         self.depot_capacity = depot_capacity
-        # self.depot_capacity = 100
 
         self.global_pheromone_matrix = pheromone_matrix
         self.local_pheromone_matrix = np.zeros(pheromone_matrix.shape)
@@ -90,30 +89,26 @@ class Ant:
 
         return current_neighbours[selected_neigh]
 
-    # def __compute_solution_cost__(self):
-    #     # cost = 0
-    #     # for current in range(len(self.solution) - 1):
-    #     #     cost += self.cost_matrix[self.solution[current], self.solution[current + 1]]
-    #
-    #     cost = np.sum(np.multiply(self.cost_matrix, self.solution))
-    #     return cost
-
     def __repair_unfeasible__(self, solution):
 
+        # Find all trips that enter the depot directly (in_trips)
         in_nodes = []
         for row_index in range(1, solution.shape[0]):
             if solution[row_index, 0] == 1:
                 in_nodes.append(row_index)
 
+        # Find all the trips that leave the depot directly (out_trips)
         out_nodes = []
         for col_index in range(1, solution.shape[1]):
             if solution[0, col_index] == 1:
                 out_nodes.append(col_index)
 
-        used = []
+        output_used = []
+        # For each in_trip and out_trip
         for in_index, in_node in enumerate(in_nodes):
             for out_index, out_node in enumerate(out_nodes):
-                if self.cost_matrix[in_node, out_node] != -1 and in_node not in used and out_node not in used:
+                # if there is a feasible arc between the in_trip and the out_trip
+                if self.cost_matrix[in_node, out_node] != -1 and out_node not in output_used:
                     # Remove old arcs to/from depot
                     solution[in_node, 0] = 0
                     solution[0, out_node] = 0
@@ -121,14 +116,15 @@ class Ant:
                     # Add new arc between the
                     solution[in_node, out_node] = 1
 
-                    used += [in_node, out_node]
+                    output_used += [out_node]
+
+                    # Remove one vehicle
                     self.depot_visits -= 1
+                    # Go to the next in_trip
                     break
 
             # if self.depot_visits <= self.depot_capacity:
             #     break
-
-        # print("Needed = ", self.depot_visits - self.depot_capacity)
 
         return solution
 
