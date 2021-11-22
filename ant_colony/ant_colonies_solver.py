@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from tqdm import tqdm
 
@@ -8,6 +10,8 @@ from ant_colony.ant_colony_system import AntColonySystem
 class AntColoniesSolver:
 
     def __init__(self,
+                 cost_save_path,
+                 solution_save_path,
                  partitioner: Partitioner,
                  number_of_iterations,
                  number_of_ants,
@@ -17,6 +21,9 @@ class AntColoniesSolver:
                  ro,
                  phi,
                  q_0):
+
+        self.cost_save_path = cost_save_path
+        self.solution_save_path = solution_save_path
         self.partitioner = partitioner
         self.graph = partitioner.get_graph()
 
@@ -62,12 +69,20 @@ class AntColoniesSolver:
                 current_solution[initial_nodes[row_index], initial_nodes[col_index]] = \
                     partial_solution[row_index, col_index]
 
+    def __log__(self, iteration, current_solution, current_cost):
+
+        with open(self.cost_save_path, "a") as file:
+            file.write(f"{iteration}: {current_cost}\n")
+
+        with open(self.solution_save_path, "a") as file:
+            file.write(f"{iteration}: {current_solution.tolist()}\n")
+
     def solve(self):
 
         best_solution = []
         best_cost = -1
 
-        for iteration in tqdm(range(self.number_of_iterations)):
+        for iteration in range(self.number_of_iterations):
 
             current_solution = np.zeros(self.cost_matrix.shape)
             current_cost = 0
@@ -92,12 +107,8 @@ class AntColoniesSolver:
                 best_cost = current_cost
                 best_solution = current_solution
 
-            print(best_cost)
-            with open(f"./ant_colony_results/iteration_{iteration}_result.txt", "w") as file:
-                for line in current_solution:
-                    for elem in line:
-                        file.write(str(int(elem)) + " ")
-                    file.write("\n")
-                file.write(str(current_cost))
+            # print(best_cost)
+
+            self.__log__(iteration, current_solution, current_cost)
 
         return best_solution, best_cost

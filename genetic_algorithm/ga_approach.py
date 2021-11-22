@@ -1,7 +1,7 @@
 from genetic_algorithm.ga import GeneticAlgorithm
 
 if __name__ == '__main__':
-    file_path = "data/4m500n/m4n500s0.inp"
+    file_path = "../data/m4n500/m4n500s0.inp"
 
     # TO DO:
     #   initialize the genetic algorithm population with gurobi solutions

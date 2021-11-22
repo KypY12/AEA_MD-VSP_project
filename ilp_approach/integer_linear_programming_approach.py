@@ -74,12 +74,12 @@ def solve(m, n, depots_capacities, cost_matrix, unfeasible_matrix, unfeasible_pa
     # which would not constrain the use of unfeasible solutions in gurobi)
     model.addConstr(unfeasible_matrix @ x == 0.0, name="unfeasible")
 
-    # Trips single-entering constraints ( constraint (4m1000n) for trips )
+    # Trips single-entering constraints ( constraint (m4n1000) for trips )
     for j in range(m, m + n):
         model.addConstr(sum(x[(m + n) * i + j] for i in range(0, m + n)) == 1.0,
                         name="trip_in_" + str(j))
 
-    # Trips single-leaving constraints ( constraint (4m1500n) for trips )
+    # Trips single-leaving constraints ( constraint (m4n1500) for trips )
     for i in range(m, m + n):
         model.addConstr(sum(x[(m + n) * i + j] for j in range(0, m + n)) == 1.0,
                         name="trip_out_" + str(i))
@@ -164,7 +164,7 @@ def read_obj_file_paths(file_path):
 
 
 if __name__ == '__main__':
-    file_path = "data/4m500n/m4n500s0.inp"
+    file_path = "../data/m4n500/m4n500s0.inp"
     m, n, depots_capacities, cost_matrix = read_cost_matrix(file_path)
     unfeasible_matrix = get_unfeasible_matrix(cost_matrix)
 

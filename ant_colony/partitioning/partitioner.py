@@ -1,3 +1,5 @@
+import json
+
 from ant_colony.problem_graph import ProblemGraph
 from ant_colony.partitioning.graph_partition import GraphPartition
 
@@ -7,6 +9,9 @@ class Partitioner:
     def __init__(self, graph: ProblemGraph):
         self.graph = graph
         self.partitions = []
+
+    def toJSON(self):
+        return json.dumps(self, default=lambda t: t.__dict__, sort_keys=True, indent=4)
 
     def get_graph(self):
         return self.graph

@@ -83,7 +83,7 @@ class Ant:
         selected_neigh = 0
         random_number = np.random.rand()
         for index, cumulative_prob in enumerate(cumulative_probabilities):
-            if random_number < cumulative_prob:
+            if random_number <= cumulative_prob:
                 selected_neigh = index
                 break
 
@@ -166,7 +166,6 @@ class Ant:
                 # solution.append(next_node)
                 solution[current_node][next_node] = 1
                 current_node = next_node
-
 
             # if self.depot_visits > self.depot_capacity:
             solution = self.__repair_unfeasible__(solution)
