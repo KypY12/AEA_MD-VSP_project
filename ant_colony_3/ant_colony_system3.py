@@ -1,8 +1,10 @@
+import random
+
 import numpy as np
 from tqdm import tqdm
 
 
-class Ant2:
+class Ant3:
     def __init__(self,
                  m,
                  n,
@@ -98,7 +100,7 @@ class Ant2:
 
         return current_neighbours[selected_neigh]
 
-    def __reduce_vehicles__(self, solution):
+    def __reduce_vehicles_near_depot__(self, solution):
 
         for depot_index in range(self.m):
 
@@ -136,6 +138,190 @@ class Ant2:
 
         return solution
 
+    def __get_circuits_paths__(self, solution):
+
+        depots_circuits = []
+        for depot_index in range(self.m):
+
+            current_depot_circuits = []
+            for start_index in range(solution.shape[1]):
+
+                # If it is a starting index
+                if solution[depot_index, start_index] == 1:
+
+                    circuit = []
+                    current = start_index
+
+                    while current != depot_index:
+                        circuit += [current]
+                        current = np.where(solution[current] == 1)[0][0]
+                        # for index in range(solution.shape[1]):
+                        #     if solution[current, index] == 1:
+                        #         current = index
+                        #         break
+
+                    current_depot_circuits += [circuit]
+
+            depots_circuits += [current_depot_circuits]
+
+        return depots_circuits
+
+    def __reduce_vehicles_by_same_depot_circuits_joins__(self, solution, depot_circuits):
+
+        changes_are_made = False
+
+        for depot_index in range(self.m):
+
+            current_circuits = depot_circuits[depot_index]
+            random.shuffle(current_circuits)
+            used_circuits = []
+
+            for circuit_index in range(len(current_circuits)):
+
+                if circuit_index not in used_circuits:
+                    found = False
+                    current = current_circuits[circuit_index]
+                    current_start = current[0]
+                    current_end = current[-1]
+
+                    for other_index in range(len(current_circuits)):
+
+                        if other_index != circuit_index and other_index not in used_circuits:
+
+                            other = [depot_index]
+                            other += current_circuits[other_index]
+                            other += [depot_index]
+                            # other = current_circuits[circuit_index]
+
+                            for node_index in range(len(other) - 1):
+                                other_node = other[node_index]
+                                other_next_node = other[node_index + 1]
+
+                                if self.cost_matrix[other_node, current_start] != -1 and \
+                                        self.cost_matrix[current_end, other_next_node] != -1:
+                                    # Remove the other circuit edge
+                                    solution[other_node, other_next_node] = 0
+
+                                    # print("ceva")
+
+                                    # Remove depot edges to current circuit
+                                    solution[depot_index, current_start] = 0
+                                    solution[current_end, depot_index] = 0
+
+                                    # Add the 2 new edges (join the two circuits)
+                                    solution[other_node, current_start] = 1
+                                    solution[current_end, other_next_node] = 1
+
+                                    used_circuits += [circuit_index, other_index]
+                                    found = True
+                                    changes_are_made = True
+                                    self.depot_visits[depot_index] -= 1
+
+                                    break
+
+                        if found:
+                            break
+
+        return solution, changes_are_made
+
+    def __search_and_join_circuit__(self, depot_index,
+                                    other_depot,
+                                    depots_circuits,
+                                    used_circuits,
+                                    circuit_index,
+                                    current_start,
+                                    current_end,
+                                    solution):
+
+        other_circuits = depots_circuits[other_depot]
+
+        for other_index in range(len(other_circuits)):
+
+            if (other_index != circuit_index or other_depot != depot_index) and \
+                    other_index not in used_circuits:
+
+                other = [other_depot]
+                other += other_circuits[other_index]
+                other += [other_depot]
+
+                for node_index in range(len(other) - 1):
+                    other_node = other[node_index]
+                    other_next_node = other[node_index + 1]
+
+                    if self.cost_matrix[other_node, current_start] != -1 and \
+                            self.cost_matrix[current_end, other_next_node] != -1:
+                        # Remove the other circuit edge
+                        solution[other_node, other_next_node] = 0
+
+                        # Remove depot edges to current circuit
+                        solution[depot_index, current_start] = 0
+                        solution[current_end, depot_index] = 0
+
+                        # Add the 2 new edges (join the two circuits)
+                        solution[other_node, current_start] = 1
+                        solution[current_end, other_next_node] = 1
+
+                        used_circuits += [circuit_index, other_index]
+
+                        used_circuits[depot_index] += [circuit_index]
+                        used_circuits[other_depot] += [other_index]
+
+                        self.depot_visits[depot_index] -= 1
+
+                        return True
+
+        return False
+
+    def __reduce_vehicles_by_circuits_joins__(self, solution, depot_circuits):
+
+        changes_are_made = False
+
+        used_circuits = []
+        for depot_index in range(self.m):
+            used_circuits.append([])
+
+            depot_circuits[depot_index] = sorted(depot_circuits[depot_index], key=lambda t: len(t))
+            # random.shuffle(depot_circuits[depot_index])
+
+        depot_list = list(range(self.m))
+        random.shuffle(depot_list)
+
+        for depot_index in range(self.m):
+
+            current_circuits = depot_circuits[depot_index]
+
+            for circuit_index in range(len(current_circuits)):
+
+                if circuit_index not in used_circuits[depot_index]:
+                    current = current_circuits[circuit_index]
+                    current_start = current[0]
+                    current_end = current[-1]
+
+                    for other_depot in depot_list:
+
+                        if self.__search_and_join_circuit__(depot_index,
+                                                            other_depot,
+                                                            depot_circuits,
+                                                            used_circuits,
+                                                            circuit_index,
+                                                            current_start,
+                                                            current_end,
+                                                            solution):
+                            changes_are_made = True
+                            break
+
+        return solution, changes_are_made
+
+    def __reduce_vehicles__(self, solution):
+
+        changes_are_made = True
+
+        while changes_are_made:
+            depot_circuits = self.__get_circuits_paths__(solution)
+            solution, changes_are_made = self.__reduce_vehicles_by_circuits_joins__(solution, depot_circuits)
+
+        return solution
+
     def __choose_depot__(self):
         # Roulette wheel - choosing the depot based on the available vehicles
 
@@ -157,7 +343,6 @@ class Ant2:
             return np.argmax(self.depot_visits)
 
     def construct_solution(self):
-
         solution = []
         self.depot_visits = self.depot_capacities + 1
 
@@ -180,7 +365,7 @@ class Ant2:
                 if depot_reached:
                     depot_reached = False
                     random_number = np.random.rand()
-                    if random_number < self.teleport_factor:
+                    if random_number <= self.teleport_factor:
                         # teleport to a depot (it could be the same depot)
                         current_node = self.__choose_depot__()
                         current_depot = current_node
@@ -210,7 +395,7 @@ class Ant2:
                 solution[current_node][next_node] = 1
                 current_node = next_node
 
-            # if self.depot_visits > self.depot_capacity:
+            # if np.any(self.depot_visits > self.depot_capacities):
             solution = self.__reduce_vehicles__(solution)
 
         self.solution = solution
@@ -221,7 +406,7 @@ class Ant2:
         return self.global_pheromone_matrix
 
 
-class AntColonySystem2:
+class AntColonySystem3:
 
     def __init__(self,
                  cost_save_path,
@@ -256,7 +441,7 @@ class AntColonySystem2:
 
         self.pheromone_matrix = np.full(self.cost_matrix.shape, self.tau_0)
 
-        self.ants = [Ant2(m, n, self.cost_matrix, self.depot_capacities, self.pheromone_matrix,
+        self.ants = [Ant3(m, n, self.cost_matrix, self.depot_capacities, self.pheromone_matrix,
                           (self.tau_0, self.alpha, self.beta, self.phi, self.q_0, self.teleport_factor))
                      for _ in range(self.number_of_ants)]
 
@@ -308,6 +493,8 @@ class AntColonySystem2:
                 if current_cost < current_best_cost or current_best_cost == -1:
                     current_best_solution = ant.get_solution()
                     current_best_cost = current_cost
+
+            print(self.best_solution_cost)
 
             self.__log__(iteration, current_best_solution, current_best_cost)
 

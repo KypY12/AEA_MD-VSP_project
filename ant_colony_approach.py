@@ -1,7 +1,6 @@
 import json
 import os
 
-import numpy as np
 from tqdm import tqdm
 
 from data_readers.cost_matrix_reader import CostMatrixReader
@@ -11,19 +10,17 @@ from ant_colony.partitioning.partitioner import Partitioner
 
 from ant_colony.ant_colonies_solver import AntColoniesSolver
 
-from genetic_algorithm.evaluation import Evaluation
-
 if __name__ == '__main__':
 
     runs = 30
 
     instances_sizes = [
-        # "m4n500",
+        "m4n500",
         # "m4n1000",
         # "m4n1500",
         # "m8n500",
         # "m8n1000",
-        "m8n1500"
+        # "m8n1500"
     ]
     instance_names = [f"s{i}.inp" for i in range(5)]
 

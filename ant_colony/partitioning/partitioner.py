@@ -80,18 +80,3 @@ class Partitioner:
         depot_neighbours = list(filter(lambda t: t[0] < self.graph.get_m(), self.graph.get_neighbours_cost(node)))
         min_depot = min(depot_neighbours, key=lambda t: t[1])
         return min_depot[0]
-
-    # def __find_closest_depot_by_arcs__(self, node):
-    #     # Searches the closest depot by doing a BFS
-    #     # Obs.: the search is done using both arc orientations
-    #     current = [node]
-    #     found = False
-    #     visited = []
-    #
-    #     while not found:
-    #         if current[0] < self.graph.get_m():
-    #             found = True
-    #         elif current[0] not in visited:
-    #             current = current[1:] + self.graph.get_neighbours(current[0])
-    #
-    #     return current[0]

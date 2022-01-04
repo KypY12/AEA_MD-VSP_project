@@ -1,7 +1,7 @@
 import numpy as np
 
 
-from genetic_algorithm.evaluation import Evaluation
+from evaluation.evaluation import Evaluation
 
 
 def generate_random_bit_string(shape):
